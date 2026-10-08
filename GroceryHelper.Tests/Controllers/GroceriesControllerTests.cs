@@ -68,6 +68,39 @@ public sealed class GroceriesControllerTests : IDisposable
         Assert.Equal(created, Assert.Single(groceries!));
     }
 
+    [Fact]
+    public async Task Post_WithCategory_ReturnsGroceryWithTrimmedCategory()
+    {
+        var response = await _client.PostAsJsonAsync(BaseUrl, new GroceryRequest("Milk", 2, "  Dairy  "));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal("Dairy", (await response.Content.ReadFromJsonAsync<Grocery>())?.Category);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Post_WithoutCategory_ReturnsGroceryWithNullCategory(string? category)
+    {
+        var response = await _client.PostAsJsonAsync(BaseUrl, new GroceryRequest("Milk", 2, category));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Null((await response.Content.ReadFromJsonAsync<Grocery>())?.Category);
+    }
+
+    [Fact]
+    public async Task Get_WithCategory_ReturnsOnlyMatchingGroceries()
+    {
+        var milk = await CreateGroceryAsync("Milk", 2, "Dairy");
+        await CreateGroceryAsync("Apples", 6, "Produce");
+        await CreateGroceryAsync("Bread", 1);
+
+        var groceries = await _client.GetFromJsonAsync<List<Grocery>>($"{BaseUrl}?category=dairy");
+
+        Assert.Equal(milk, Assert.Single(groceries!));
+    }
+
     [Theory]
     [MemberData(nameof(InvalidRequests))]
     public async Task Post_WithInvalidRequest_ReturnsBadRequest(GroceryRequest request)
@@ -83,10 +116,10 @@ public sealed class GroceriesControllerTests : IDisposable
     {
         var created = await CreateGroceryAsync("Milk", 2);
 
-        var response = await _client.PutAsJsonAsync($"{BaseUrl}/{created.Id}", new GroceryRequest("Oat Milk", 3));
+        var response = await _client.PutAsJsonAsync($"{BaseUrl}/{created.Id}", new GroceryRequest("Oat Milk", 3, "Plant-based"));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var expected = new Grocery(created.Id, "Oat Milk", 3);
+        var expected = new Grocery(created.Id, "Oat Milk", 3, "Plant-based");
         Assert.Equal(expected, await response.Content.ReadFromJsonAsync<Grocery>());
         Assert.Equal(expected, Assert.Single((await _client.GetFromJsonAsync<List<Grocery>>(BaseUrl))!));
     }
@@ -141,7 +174,7 @@ public sealed class GroceriesControllerTests : IDisposable
     public async Task UnhandledException_ReturnsInternalServerErrorProblemDetailsWithoutLeakingDetails()
     {
         var repository = Substitute.For<IGroceryRepository>();
-        repository.GetAllAsync().ThrowsAsync(new InvalidOperationException("secret internal detail"));
+        repository.GetAllAsync(Arg.Any<string?>()).ThrowsAsync(new InvalidOperationException("secret internal detail"));
         using var client = _factory
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services => services.AddSingleton(repository)))
             .CreateClient();
@@ -179,11 +212,12 @@ public sealed class GroceriesControllerTests : IDisposable
         new GroceryRequest("Milk", 0),
         new GroceryRequest("Milk", -1),
         new GroceryRequest("Milk", GroceryRequest.MaxQuantity + 1),
+        new GroceryRequest("Milk", 1, new string('a', GroceryRequest.MaxCategoryLength + 1)),
     };
 
-    private async Task<Grocery> CreateGroceryAsync(string name, int quantity)
+    private async Task<Grocery> CreateGroceryAsync(string name, int quantity, string? category = null)
     {
-        var response = await _client.PostAsJsonAsync(BaseUrl, new GroceryRequest(name, quantity));
+        var response = await _client.PostAsJsonAsync(BaseUrl, new GroceryRequest(name, quantity, category));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<Grocery>())!;
     }

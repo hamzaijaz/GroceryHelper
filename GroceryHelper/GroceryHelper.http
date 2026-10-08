@@ -6,12 +6,18 @@ Accept: application/json
 
 ###
 
+GET {{GroceryHelper_HostAddress}}/api/groceries?category=Dairy
+Accept: application/json
+
+###
+
 POST {{GroceryHelper_HostAddress}}/api/groceries
 Content-Type: application/json
 
 {
   "name": "Milk",
-  "quantity": 2
+  "quantity": 2,
+  "category": "Dairy"
 }
 
 ###
@@ -21,7 +27,8 @@ Content-Type: application/json
 
 {
   "name": "Oat Milk",
-  "quantity": 3
+  "quantity": 3,
+  "category": "Plant-based"
 }
 
 ###

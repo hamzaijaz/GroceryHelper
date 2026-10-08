@@ -10,11 +10,12 @@ namespace GroceryHelper.Controllers;
 [Produces(MediaTypeNames.Application.Json)]
 public sealed class GroceriesController(IGroceryRepository repository, ILogger<GroceriesController> logger) : ControllerBase
 {
+    /// <param name="category">Optional case-insensitive category to filter by.</param>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<Grocery>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<Grocery>>> GetAll()
+    public async Task<ActionResult<IReadOnlyList<Grocery>>> GetAll([FromQuery] string? category)
     {
-        var groceries = await repository.GetAllAsync();
+        var groceries = await repository.GetAllAsync(category);
         return Ok(groceries);
     }
 

@@ -4,7 +4,8 @@ namespace GroceryHelper.Repositories;
 
 public interface IGroceryRepository
 {
-    Task<IReadOnlyList<Grocery>> GetAllAsync();
+    /// <param name="category">Optional case-insensitive category filter; <c>null</c> or blank returns all groceries.</param>
+    Task<IReadOnlyList<Grocery>> GetAllAsync(string? category);
 
     /// <exception cref="InvalidOperationException">A grocery with the same id already exists.</exception>
     Task AddAsync(Grocery grocery);
