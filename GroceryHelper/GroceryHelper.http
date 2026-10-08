@@ -1,6 +1,31 @@
 @GroceryHelper_HostAddress = http://localhost:5001
+@groceryId = 00000000-0000-0000-0000-000000000000
 
-GET {{GroceryHelper_HostAddress}}/weatherforecast/
+GET {{GroceryHelper_HostAddress}}/api/groceries
 Accept: application/json
+
+###
+
+POST {{GroceryHelper_HostAddress}}/api/groceries
+Content-Type: application/json
+
+{
+  "name": "Milk",
+  "quantity": 2
+}
+
+###
+
+PUT {{GroceryHelper_HostAddress}}/api/groceries/{{groceryId}}
+Content-Type: application/json
+
+{
+  "name": "Oat Milk",
+  "quantity": 3
+}
+
+###
+
+DELETE {{GroceryHelper_HostAddress}}/api/groceries/{{groceryId}}
 
 ###

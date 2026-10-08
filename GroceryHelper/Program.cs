@@ -1,15 +1,27 @@
-var builder = WebApplication.CreateBuilder(args);
+using GroceryHelper.Repositories;
 
-// Add services to the container.
+const string FrontendCorsPolicy = "Frontend";
+
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Unhandled exceptions are logged by the exception handler middleware and returned as RFC 7807 problem details.
+builder.Services.AddProblemDetails();
+
+builder.Services.AddSingleton<IGroceryRepository, InMemoryGroceryRepository>();
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy =>
+    policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -18,8 +30,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors(FrontendCorsPolicy);
+
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
+// Exposes the implicit Program class to WebApplicationFactory in the integration tests.
+public partial class Program { }
