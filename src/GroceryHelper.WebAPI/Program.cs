@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
-using GroceryHelper.Repositories;
+using GroceryHelper.Application;
+using GroceryHelper.Infrastructure;
 
 const string FrontendCorsPolicy = "Frontend";
 
@@ -16,7 +17,8 @@ builder.Services.AddSwaggerGen();
 // Unhandled exceptions are logged by the exception handler middleware and returned as RFC 7807 problem details.
 builder.Services.AddProblemDetails();
 
-builder.Services.AddSingleton<IGroceryRepository, InMemoryGroceryRepository>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy =>

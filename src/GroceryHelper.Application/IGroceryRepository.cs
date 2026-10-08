@@ -1,6 +1,6 @@
-using GroceryHelper.Models;
+using GroceryHelper.Domain;
 
-namespace GroceryHelper.Repositories;
+namespace GroceryHelper.Application;
 
 public interface IGroceryRepository
 {

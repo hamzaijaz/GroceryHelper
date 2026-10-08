@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using GroceryHelper.Domain;
 
-namespace GroceryHelper.Models;
+namespace GroceryHelper.Application;
 
 /// <summary>
 /// Payload used to create or update a grocery.

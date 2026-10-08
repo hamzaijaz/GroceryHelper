@@ -1,4 +1,4 @@
-namespace GroceryHelper.Models;
+namespace GroceryHelper.Domain;
 
 /// <summary>
 /// Supported grocery categories. Serialized by name (e.g. "FrozenFood"), so new members can be added freely.

@@ -2,14 +2,14 @@
 
 An ASP.NET Core 8 Web API for managing a grocery list. It provides CRUD endpoints for grocery items, which can be tagged with a category and filtered by it. It is intended to be called from a separate frontend app.
 
-Data is held in an in-memory store, so it is lost whenever the app restarts. The storage sits behind the `IGroceryRepository` interface, so a real database can replace it later without changing the controller.
+Data is held in an in-memory store, so it is lost whenever the app restarts. The storage sits behind the `IGroceryRepository` interface in the Application layer, so a real database can replace it later by adding a new implementation in the Infrastructure layer, without changing the controller or the application logic.
 
 ## Getting started
 
 Prerequisites: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later.
 
 ```bash
-dotnet run --project GroceryHelper --launch-profile http
+dotnet run --project src/GroceryHelper.WebAPI --launch-profile http
 ```
 
 - **API:** `http://localhost:5001/api/groceries`
@@ -17,7 +17,7 @@ dotnet run --project GroceryHelper --launch-profile http
 
 The `https` profile also listens on `https://localhost:7200`.
 
-[GroceryHelper/GroceryHelper.http](GroceryHelper/GroceryHelper.http) has ready-made requests for each endpoint, for use with the VS Code REST Client or the Visual Studio HTTP editor.
+[GroceryHelper.WebAPI.http](src/GroceryHelper.WebAPI/GroceryHelper.WebAPI.http) has ready-made requests for each endpoint, for use with the VS Code REST Client or the Visual Studio HTTP editor.
 
 ## API
 
@@ -68,7 +68,7 @@ Base route: `/api/groceries`
 - Categories are sent and returned as names, and incoming names ignore case.
 - Numeric values such as `3` are rejected with `400`.
 - Swagger shows the category search filter as a dropdown.
-- To add a category, add a member to [GroceryCategory.cs](GroceryHelper/Models/GroceryCategory.cs).
+- To add a category, add a member to [GroceryCategory.cs](src/GroceryHelper.Domain/GroceryCategory.cs).
 
 ### Errors
 
@@ -86,8 +86,8 @@ The frontend's address must be listed in `Cors:AllowedOrigins`. Requests from an
 
 | File | Allowed origins |
 |---|---|
-| [appsettings.Development.json](GroceryHelper/appsettings.Development.json) | `http://localhost:3000`, `http://localhost:4200` and `http://localhost:5173` (the default React, Angular and Vite ports) |
-| [appsettings.json](GroceryHelper/appsettings.json) | None. Add the deployed frontend's URL before release. |
+| [appsettings.Development.json](src/GroceryHelper.WebAPI/appsettings.Development.json) | `http://localhost:3000`, `http://localhost:4200` and `http://localhost:5173` (the default React, Angular and Vite ports) |
+| [appsettings.json](src/GroceryHelper.WebAPI/appsettings.json) | None. Add the deployed frontend's URL before release. |
 
 You can also set the origins with environment variables, for example `Cors__AllowedOrigins__0=https://app.example.com`.
 
@@ -105,26 +105,42 @@ Update and delete requests for a missing id are logged as warnings. Log levels a
 
 ## Project structure
 
+The solution is split into layers. Each layer depends only on the layers listed below it:
+
 ```
-GroceryHelper/                  Web API project (also contains GroceryHelper.sln)
-  Controllers/                  GroceriesController: HTTP endpoints
-  Models/                       Grocery, GroceryRequest (validation), GroceryCategory
-  Repositories/                 IGroceryRepository and the in-memory implementation
-  Program.cs                    Service registration, CORS, exception handling, JSON options
-GroceryHelper.Tests/            xUnit test project
-  Controllers/                  Integration tests through the full HTTP pipeline
-  Repositories/                 Unit tests for the in-memory repository
+GroceryHelper.sln
+src/
+  GroceryHelper.WebAPI/           Presentation layer and runnable host
+    Controllers/                  GroceriesController: HTTP endpoints
+    Program.cs                    Service registration, CORS, exception handling, JSON options
+    appsettings*.json             CORS origins and logging configuration
+  GroceryHelper.Infrastructure/   Infrastructure layer
+    Repositories/                 InMemoryGroceryRepository, the IGroceryRepository implementation
+    DependencyInjection.cs        AddInfrastructure()
+  GroceryHelper.Application/      Application layer
+    GroceryService.cs             Use cases called by the controller
+    GroceryRequest.cs             Create/update payload and its validation rules
+    IGroceryRepository.cs         Storage abstraction implemented by Infrastructure
+    DependencyInjection.cs        AddApplication()
+  GroceryHelper.Domain/           Domain layer: Grocery, GroceryCategory (no dependencies)
+tests/
+  GroceryHelper.Tests/            xUnit test project
+    Controllers/                  Integration tests through the full HTTP pipeline
+    Application/                  Unit tests for GroceryService
+    Repositories/                 Unit tests for the in-memory repository
 ```
+
+Dependencies: `WebAPI` → `Application` + `Infrastructure` (it registers both at startup); `Infrastructure` → `Application` → `Domain`.
 
 ## Testing
 
 The project was built test-first. Run the tests with:
 
 ```bash
-dotnet test GroceryHelper/GroceryHelper.sln
+dotnet test
 ```
 
 - **Integration tests** use `WebApplicationFactory` to call the real HTTP pipeline. They cover each endpoint, validation, unknown categories, 404s, the 500 error response, the lowercase routes in Swagger, and CORS for allowed and blocked origins. Each test starts with an empty store.
-- **Unit tests** cover the repository: adding, updating, deleting, filtering, sorting, and log content. Log content is checked with `FakeLogger`.
+- **Unit tests** cover `GroceryService` (with a substituted repository) and the repository: adding, updating, deleting, filtering, sorting, and log content. Log content is checked with `FakeLogger`.
 
 Test libraries: xUnit, NSubstitute and `Microsoft.Extensions.Diagnostics.Testing`.

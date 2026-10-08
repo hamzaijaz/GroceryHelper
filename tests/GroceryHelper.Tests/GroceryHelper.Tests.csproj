@@ -20,11 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GroceryHelper\GroceryHelper.csproj" />
+    <Using Include="Xunit" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\..\src\GroceryHelper.WebAPI\GroceryHelper.WebAPI.csproj" />
   </ItemGroup>
 
 </Project>

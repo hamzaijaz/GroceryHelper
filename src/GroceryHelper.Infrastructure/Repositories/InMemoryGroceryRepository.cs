@@ -1,7 +1,9 @@
 using System.Collections.Concurrent;
-using GroceryHelper.Models;
+using GroceryHelper.Application;
+using GroceryHelper.Domain;
+using Microsoft.Extensions.Logging;
 
-namespace GroceryHelper.Repositories;
+namespace GroceryHelper.Infrastructure.Repositories;
 
 /// <summary>
 /// Thread-safe, non-persistent store. Register as a singleton so data lives for the lifetime of the app.

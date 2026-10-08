@@ -1,5 +1,5 @@
-using GroceryHelper.Models;
-using GroceryHelper.Repositories;
+using GroceryHelper.Domain;
+using GroceryHelper.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
