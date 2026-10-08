@@ -10,16 +10,10 @@ public sealed class InMemoryGroceryRepository : IGroceryRepository
 {
     private readonly ConcurrentDictionary<Guid, Grocery> _groceries = new();
 
-    public Task<IReadOnlyList<Grocery>> GetAllAsync(string? category)
+    public Task<IReadOnlyList<Grocery>> GetAllAsync(GroceryCategory? category)
     {
-        IEnumerable<Grocery> query = _groceries.Values;
-        if (!string.IsNullOrWhiteSpace(category))
-        {
-            var trimmedCategory = category.Trim();
-            query = query.Where(g => string.Equals(g.Category, trimmedCategory, StringComparison.OrdinalIgnoreCase));
-        }
-
-        IReadOnlyList<Grocery> groceries = query
+        IReadOnlyList<Grocery> groceries = _groceries.Values
+            .Where(g => category is null || g.Category == category)
             .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 

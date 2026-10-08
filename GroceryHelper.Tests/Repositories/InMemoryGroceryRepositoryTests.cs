@@ -47,20 +47,17 @@ public class InMemoryGroceryRepositoryTests
         Assert.Equal(["Apples", "Bread", "milk"], groceries.Select(g => g.Name));
     }
 
-    [Theory]
-    [InlineData("Dairy")]
-    [InlineData("dairy")]
-    [InlineData("DAIRY")]
-    public async Task GetAllAsync_WithCategory_ReturnsOnlyMatchingGroceriesIgnoringCase(string category)
+    [Fact]
+    public async Task GetAllAsync_WithCategory_ReturnsOnlyMatchingGroceries()
     {
-        var milk = new Grocery(Guid.NewGuid(), "Milk", 1, "Dairy");
-        var cheese = new Grocery(Guid.NewGuid(), "Cheese", 1, "dairy");
+        var milk = new Grocery(Guid.NewGuid(), "Milk", 1, GroceryCategory.Dairy);
+        var cheese = new Grocery(Guid.NewGuid(), "Cheese", 1, GroceryCategory.Dairy);
         await _repository.AddAsync(milk);
         await _repository.AddAsync(cheese);
-        await _repository.AddAsync(new Grocery(Guid.NewGuid(), "Apples", 6, "Produce"));
+        await _repository.AddAsync(new Grocery(Guid.NewGuid(), "Apples", 6, GroceryCategory.Fruit));
         await _repository.AddAsync(new Grocery(Guid.NewGuid(), "Bread", 1));
 
-        var groceries = await _repository.GetAllAsync(category);
+        var groceries = await _repository.GetAllAsync(GroceryCategory.Dairy);
 
         Assert.Equal([cheese, milk], groceries);
     }
@@ -68,23 +65,20 @@ public class InMemoryGroceryRepositoryTests
     [Fact]
     public async Task GetAllAsync_WithCategory_WhenNoneMatch_ReturnsEmptyList()
     {
-        await _repository.AddAsync(new Grocery(Guid.NewGuid(), "Milk", 1, "Dairy"));
+        await _repository.AddAsync(new Grocery(Guid.NewGuid(), "Milk", 1, GroceryCategory.Dairy));
 
-        var groceries = await _repository.GetAllAsync("Bakery");
+        var groceries = await _repository.GetAllAsync(GroceryCategory.Snacks);
 
         Assert.Empty(groceries);
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task GetAllAsync_WithoutCategory_ReturnsAllGroceries(string? category)
+    [Fact]
+    public async Task GetAllAsync_WithoutCategory_ReturnsAllGroceries()
     {
-        await _repository.AddAsync(new Grocery(Guid.NewGuid(), "Milk", 1, "Dairy"));
+        await _repository.AddAsync(new Grocery(Guid.NewGuid(), "Milk", 1, GroceryCategory.Dairy));
         await _repository.AddAsync(new Grocery(Guid.NewGuid(), "Bread", 1));
 
-        var groceries = await _repository.GetAllAsync(category);
+        var groceries = await _repository.GetAllAsync(category: null);
 
         Assert.Equal(2, groceries.Count);
     }

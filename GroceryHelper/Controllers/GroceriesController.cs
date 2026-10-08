@@ -6,14 +6,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace GroceryHelper.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/groceries")]
 [Produces(MediaTypeNames.Application.Json)]
 public sealed class GroceriesController(IGroceryRepository repository, ILogger<GroceriesController> logger) : ControllerBase
 {
-    /// <param name="category">Optional case-insensitive category to filter by.</param>
+    /// <param name="category">Optional category to filter by.</param>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<Grocery>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<Grocery>>> GetAll([FromQuery] string? category)
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<Grocery>>> GetAll([FromQuery] GroceryCategory? category)
     {
         var groceries = await repository.GetAllAsync(category);
         return Ok(groceries);

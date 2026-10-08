@@ -8,12 +8,10 @@ namespace GroceryHelper.Models;
 public sealed record GroceryRequest(
     [Required, StringLength(GroceryRequest.MaxNameLength)] string Name,
     [Range(1, GroceryRequest.MaxQuantity)] int Quantity,
-    [StringLength(GroceryRequest.MaxCategoryLength)] string? Category = null)
+    GroceryCategory? Category = null)
 {
     public const int MaxNameLength = 100;
     public const int MaxQuantity = 1000;
-    public const int MaxCategoryLength = 50;
 
-    public Grocery ToGrocery(Guid id) =>
-        new(id, Name.Trim(), Quantity, string.IsNullOrWhiteSpace(Category) ? null : Category.Trim());
+    public Grocery ToGrocery(Guid id) => new(id, Name.Trim(), Quantity, Category);
 }

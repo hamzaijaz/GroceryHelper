@@ -28,7 +28,7 @@ Content-Type: application/json
 {
   "name": "Oat Milk",
   "quantity": 3,
-  "category": "Plant-based"
+  "category": "Dairy"
 }
 
 ###
