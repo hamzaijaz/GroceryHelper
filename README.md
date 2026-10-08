@@ -131,6 +131,8 @@ tests/
 ```
 
 Dependencies: `WebAPI` → `Application` + `Infrastructure` (it registers both at startup); `Infrastructure` → `Application` → `Domain`.
+<img width="3507" height="4073" alt="image" src="https://github.com/user-attachments/assets/3e11463c-bbf5-4af4-982b-8ce97563c014" />
+
 
 ## Testing
 
