@@ -8,7 +8,7 @@ namespace GroceryHelper.Controllers;
 [ApiController]
 [Route("api/groceries")]
 [Produces(MediaTypeNames.Application.Json)]
-public sealed class GroceriesController(IGroceryRepository repository, ILogger<GroceriesController> logger) : ControllerBase
+public sealed class GroceriesController(IGroceryRepository repository) : ControllerBase
 {
     /// <param name="category">Optional category to filter by.</param>
     [HttpGet]
@@ -27,8 +27,6 @@ public sealed class GroceriesController(IGroceryRepository repository, ILogger<G
     {
         var grocery = request.ToGrocery(Guid.NewGuid());
         await repository.AddAsync(grocery);
-
-        logger.LogInformation("Created grocery {GroceryId}", grocery.Id);
         return StatusCode(StatusCodes.Status201Created, grocery);
     }
 
@@ -39,14 +37,7 @@ public sealed class GroceriesController(IGroceryRepository repository, ILogger<G
     public async Task<ActionResult<Grocery>> Update(Guid id, GroceryRequest request)
     {
         var grocery = request.ToGrocery(id);
-        if (!await repository.UpdateAsync(grocery))
-        {
-            logger.LogWarning("Cannot update grocery {GroceryId}: not found", id);
-            return NotFound();
-        }
-
-        logger.LogInformation("Updated grocery {GroceryId}", id);
-        return Ok(grocery);
+        return await repository.UpdateAsync(grocery) ? Ok(grocery) : NotFound();
     }
 
     [HttpDelete("{id:guid}")]
@@ -54,13 +45,6 @@ public sealed class GroceriesController(IGroceryRepository repository, ILogger<G
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        if (!await repository.DeleteAsync(id))
-        {
-            logger.LogWarning("Cannot delete grocery {GroceryId}: not found", id);
-            return NotFound();
-        }
-
-        logger.LogInformation("Deleted grocery {GroceryId}", id);
-        return NoContent();
+        return await repository.DeleteAsync(id) ? NoContent() : NotFound();
     }
 }

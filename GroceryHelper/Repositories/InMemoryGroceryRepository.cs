@@ -6,7 +6,7 @@ namespace GroceryHelper.Repositories;
 /// <summary>
 /// Thread-safe, non-persistent store. Register as a singleton so data lives for the lifetime of the app.
 /// </summary>
-public sealed class InMemoryGroceryRepository : IGroceryRepository
+public sealed class InMemoryGroceryRepository(ILogger<InMemoryGroceryRepository> logger) : IGroceryRepository
 {
     private readonly ConcurrentDictionary<Guid, Grocery> _groceries = new();
 
@@ -16,6 +16,11 @@ public sealed class InMemoryGroceryRepository : IGroceryRepository
             .Where(g => category is null || g.Category == category)
             .OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+        logger.LogInformation(
+            "Retrieved {GroceryCount} groceries (category filter: {Category})",
+            groceries.Count,
+            category?.ToString() ?? "none");
 
         return Task.FromResult(groceries);
     }
@@ -27,17 +32,37 @@ public sealed class InMemoryGroceryRepository : IGroceryRepository
             throw new InvalidOperationException($"A grocery with id '{grocery.Id}' already exists.");
         }
 
+        logger.LogInformation("Added grocery '{GroceryName}' (Id: {GroceryId})", grocery.Name, grocery.Id);
         return Task.CompletedTask;
     }
 
     public Task<bool> UpdateAsync(Grocery grocery)
     {
         // TryUpdate only succeeds if the entry still holds the value we read, so a concurrent delete can't be undone.
-        var updated = _groceries.TryGetValue(grocery.Id, out var existing)
-            && _groceries.TryUpdate(grocery.Id, grocery, existing);
+        if (!_groceries.TryGetValue(grocery.Id, out var existing) || !_groceries.TryUpdate(grocery.Id, grocery, existing))
+        {
+            logger.LogWarning(
+                "Cannot update grocery '{GroceryName}' (Id: {GroceryId}): not found", grocery.Name, grocery.Id);
+            return Task.FromResult(false);
+        }
 
-        return Task.FromResult(updated);
+        logger.LogInformation(
+            "Updated grocery '{PreviousGroceryName}' to '{GroceryName}' (Id: {GroceryId})",
+            existing.Name,
+            grocery.Name,
+            grocery.Id);
+        return Task.FromResult(true);
     }
 
-    public Task<bool> DeleteAsync(Guid id) => Task.FromResult(_groceries.TryRemove(id, out _));
+    public Task<bool> DeleteAsync(Guid id)
+    {
+        if (!_groceries.TryRemove(id, out var removed))
+        {
+            logger.LogWarning("Cannot delete grocery with Id {GroceryId}: not found", id);
+            return Task.FromResult(false);
+        }
+
+        logger.LogInformation("Deleted grocery '{GroceryName}' (Id: {GroceryId})", removed.Name, removed.Id);
+        return Task.FromResult(true);
+    }
 }
